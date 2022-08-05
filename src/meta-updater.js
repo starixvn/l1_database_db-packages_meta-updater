@@ -87,13 +87,14 @@ export default class MetaUpdater {
    * @param {MetaConfig} config 
    */
    async #executeQueuer (config) {
-    try {
+    processing: try {
       /** Queue collection */
       const queue = this.#mongo.db(Source.QUEUE.db).collection(Source.QUEUE.coll);
       const filter = { 'target.db': config.db, 'target.coll': config.coll };
 
       /** Get _ids */
       const _ids = await queue.find(filter, {projection: {_id: 1}}).map(({_id})=> _id).toArray();
+      if (_ids.length === 0) break processing;
 
       /** Build agg */
       const agg = new MetaQueue(config);
@@ -103,6 +104,7 @@ export default class MetaUpdater {
 
       /** Delete _ids */
       await queue.deleteMany(Object.assign({_id: {$in: _ids}}, filter));
+      console.log(new Date(), `[${config.db}.${config.coll}]`, `Updated ${_ids.length} ticket${_ids.length === 1 ? '' : 's'}`);
     }
     catch (e) { console.error(e) };
 
