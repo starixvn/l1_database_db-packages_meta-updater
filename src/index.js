@@ -1,11 +1,16 @@
 import MetaUpdater from "./meta-updater";
 import Source from "./const/source";
 
-const CONSTS = Object.freeze({
+/**
+ * @property  {Object}  CONFIG
+ * @property  {string}  CONFIG.db
+ * @property  {string}  CONFIG.coll
+ */
+const MetaUpdaterConst = Object.freeze({
   CONFIG: Source.CONFIG,
 });
 
 export {
-  CONSTS,
+  MetaUpdaterConst,
   MetaUpdater,
 };
