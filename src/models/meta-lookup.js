@@ -23,7 +23,7 @@ export default class MetaLookup {
     this.#filter      = source.filter;
     this.#projection  = source.project ?? 1;
 
-    if ([this.from, this.localField, this.foreignField, this.as].some(util.isNullOrUndefined))
+    if ([this.from, this.localField, this.foreignField, this.as].some(value => value == null))
       throw TypeError('Failed to initialize new instace');
   };
 

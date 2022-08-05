@@ -20,7 +20,7 @@ export default class MetaField {
     this.sourceField  = config.sourceField;
     this.default      = config.default ?? null;
 
-    if ([this.lookup, this.field, this.sourceField].some(util.isNullOrUndefined))
+    if ([this.lookup, this.field, this.sourceField].some(value => value == null))
       throw TypeError('Failed to initialize new instace');
   }
 };

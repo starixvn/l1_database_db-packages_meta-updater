@@ -22,7 +22,7 @@ export default class MetaConfig {
     this.coll     = config.target.coll;
     this.fields   = config.fields.map(field => new MetaField(field));
 
-    if ([this.db, this.coll].some(util.isNullOrUndefined))
+    if ([this.db, this.coll].some(value => value == null))
       throw TypeError('Failed to initialize new instace');
   }
 };
