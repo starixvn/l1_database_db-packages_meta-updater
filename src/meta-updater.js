@@ -5,7 +5,7 @@
 import { Collection, MongoClient } from "mongodb";
 import { MetaAggregate, MetaConfig, MetaQueue } from "./models";
 import { Source } from "./const";
-import { Schedule } from "./utils";
+import { Log, Schedule } from "./utils";
 import Config from "./config";
 
 export default class MetaUpdater {
@@ -23,12 +23,6 @@ export default class MetaUpdater {
    * @private
    */
   #config;
-
-  /**
-   * @type {Object}
-   * @private
-   */
-  #report;
 
   /**
    * @type {Object}
@@ -73,7 +67,7 @@ export default class MetaUpdater {
       await target.aggregate(agg).toArray();
       // const end = Date.now()
     }
-    catch (e) { console.error(e) };
+    catch (e) { Log.err(`[Runner-${config.db}.${config.coll}]`, e.name, '-', e.message) };
 
     /** Set next run */
     if (this.#flags.continue) {
@@ -104,9 +98,9 @@ export default class MetaUpdater {
 
       /** Delete _ids */
       await queue.deleteMany(Object.assign({_id: {$in: _ids}}, filter));
-      console.log(new Date(), `[${config.db}.${config.coll}]`, `Updated ${_ids.length} ticket${_ids.length === 1 ? '' : 's'}`);
+      Log.info(`[${config.db}.${config.coll}]`, `Updated ${_ids.length} ticket${_ids.length === 1 ? '' : 's'}`);
     }
-    catch (e) { console.error(e) };
+    catch (e) { Log.err(`[Queuer-${config.db}.${config.coll}]`, e.name, '-', e.message) };
 
     /** Set next run */
     if (this.#flags.continue) {
