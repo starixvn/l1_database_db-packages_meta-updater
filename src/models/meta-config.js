@@ -24,5 +24,11 @@ export default class MetaConfig {
 
     if ([this.db, this.coll].some(value => value == null))
       throw TypeError('Failed to initialize new instace');
-  }
+  };
+
+  toString () {
+    return `\
+MC (${String(this.id)} - ${String(this.db)}.${String(this.coll)})
+[ ${this.fields.map(field => field.toString()).join(', ')} ]`;
+  };
 };

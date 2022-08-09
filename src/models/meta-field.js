@@ -22,5 +22,13 @@ export default class MetaField {
 
     if ([this.lookup, this.field, this.sourceField].some(value => value == null))
       throw TypeError('Failed to initialize new instace');
-  }
+  };
+
+  /**
+   * 
+   * @returns {string}
+   */
+  toString () {
+    return `MF (${String(this.lookup)} - ${String(this.field)} - ${String(this.sourceField)} - ${String(this.default)})`;
+  };
 };

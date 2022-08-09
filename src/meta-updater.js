@@ -22,7 +22,13 @@ export default class MetaUpdater {
    * @type {Collection}
    * @private
    */
-  #config;
+  #configColl;
+
+  /**
+   * @type {string[]}
+   * @private
+   */
+  #configStrs;
 
   /**
    * @type {Object}
@@ -47,7 +53,10 @@ export default class MetaUpdater {
     if (!(configColl instanceof Collection)) throw Error('$config is not a Mongo Collection');
   
     this.#mongo  = configColl.s.db.s.client;
-    this.#config = configColl;
+    this.#configColl = configColl;
+
+    const connStr = this.#mongo.s.url.replace(/^mongodb:\/\/(.*):(.*)@/g, 'mongodb://$1:<REDACTED>@');
+    Log.info(`[Meta Updater]`, `Initialized on ${this.#configColl.namespace} @[${connStr}]`);
   };
 
   /**
@@ -63,15 +72,13 @@ export default class MetaUpdater {
       const agg = new MetaAggregate(config);
 
       /** Run agg */
-      // const start = Date.now();
       await target.aggregate(agg).toArray();
-      // const end = Date.now()
     }
     catch (e) { Log.err(`[Runner-${config.db}.${config.coll}]`, e.name, '-', e.message) };
 
     /** Set next run */
     if (this.#flags.continue) {
-      const nextSchedule = Schedule.getNextTimeout(Config.EPOCH_PERIOD);
+      const nextSchedule = Schedule.getNextTimeout(Config.RUNNER_PERIOD);
       this.#timeouts[`runner-${config.db}.${config.coll}`] = setTimeout(this.#executeRunner.bind(this), nextSchedule, config);
     }
   };
@@ -104,29 +111,38 @@ export default class MetaUpdater {
 
     /** Set next run */
     if (this.#flags.continue) {
-      const nextSchedule = Schedule.getNextTimeout(Config.EPOCH_PERIOD / 2);
+      const nextSchedule = Schedule.getNextTimeout(Config.QUEUER_PERIOD);
       this.#timeouts[`queuer-${config.db}.${config.coll}`] = setTimeout(this.#executeQueuer.bind(this), nextSchedule, config);
     }
   };
 
   /**
    * 
-   * @returns {Promise}
+   * @returns {Promise<MetaConfig[]>}
+   */
+  async #getConfigs () {
+    return this.#configColl.find({}, {projection: {_id: 0}}).map(doc => new MetaConfig(doc)).toArray();
+  };
+
+  /**
+   * 
    */
   async run () {
     /** Turn on flag to run continuously */
     this.#flags.continue = true;
 
-    /** Get query config & execute */
-    const configs = await this.#config.find({}, {projection: {_id: 0}}).map(doc => new MetaConfig(doc)).toArray();
+    /** Get query configs */
+    const configs = await this.#getConfigs();
+    this.#configStrs = configs.map(config => config.toString()).sort();
 
     /** Run for each config */
-    const tasks = [
-      ...configs.map(this.#executeRunner.bind(this)),
+    [ ...configs.map(this.#executeRunner.bind(this)),
       ...configs.map(this.#executeQueuer.bind(this)),
     ];
 
-    return Promise.allSettled(tasks);
+    /** Schedule next refresh */
+    const nextSchedule = Schedule.getNextTimeout(Config.REFRESH_PERIOD);
+    this.#timeouts[`refresh-config`] = setTimeout(this.refresh.bind(this), nextSchedule);
   };
 
   /**
@@ -141,5 +157,31 @@ export default class MetaUpdater {
 
     /** Clear tracking object */
     this.#timeouts = {};
+  };
+
+  /**
+   * 
+   */
+  async refresh () {
+    const label = `[Refresh config]`;
+
+    const configs = (await this.#getConfigs()).map(config => config.toString()).sort();
+    const joiner = ' ~ ';
+
+    /** Only refresh if got new config */
+    if (this.#configStrs.join(joiner) !== configs.join(joiner)) {
+      /** Stop all scheduled tasks */
+      await this.stop();
+      Log.info(label, `Stopped scheduled tasks`);
+
+      /** Run the tasks again */
+      await this.run();
+      Log.info(label, `Started tasks with new configs`);
+    } else {
+      /** Because run() will init new schedule for restart,
+       *  we need to manual set schedule for refresh if not execute run() */
+      const nextSchedule = Schedule.getNextTimeout(Config.REFRESH_PERIOD);
+      this.#timeouts[`refresh-config`] = setTimeout(this.refresh.bind(this), nextSchedule);
+    }
   };
 };
