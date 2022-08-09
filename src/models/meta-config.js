@@ -28,7 +28,7 @@ export default class MetaConfig {
 
   toString () {
     return `\
-MC (${String(this.id)} - ${String(this.db)}.${String(this.coll)})
-[ ${this.fields.map(field => field.toString()).join(', ')} ]`;
+MC(${String(this.id)} - ${String(this.db)}.${String(this.coll)})
+[ ${this.fields.map(field => field.toString()).sort().join(', ')} ]`;
   };
 };

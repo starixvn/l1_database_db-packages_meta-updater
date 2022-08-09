@@ -29,6 +29,6 @@ export default class MetaField {
    * @returns {string}
    */
   toString () {
-    return `MF (${String(this.lookup)} - ${String(this.field)} - ${String(this.sourceField)} - ${String(this.default)})`;
+    return `MF(${String(this.lookup)} - ${String(this.field)} - ${String(this.sourceField)} - ${String(this.default)})`;
   };
 };
