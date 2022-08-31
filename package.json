@@ -1,10 +1,10 @@
 {
   "name": "@ldb/meta-updater",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Add missing metadata to tickets",
-  "main": "src/index.js",
+  "main": "index.js",
   "scripts": {
-    "repl": "node --experimental-specifier-resolution=node --eval=\"process.chdir('./src');\" --interactive"
+    "repl": "node --experimental-specifier-resolution=node --interactive"
   },
   "repository": {
     "type": "git",
@@ -17,9 +17,40 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "mongodb": "^4.8.1"
+    "@ldb/db-common": "0.0.14",
+    "mongodb": "4.9.0"
   },
-  "publishConfig": {
-    "@ldb:registry": "https://git3.nexdev.net/api/v4/projects/684/packages/npm/"
+  "devDependencies": {
+    "eslint": "^8.22.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es2021": true
+    },
+    "extends": "airbnb-base",
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    },
+    "rules": {
+      "array-bracket-spacing": "off",
+      "class-methods-use-this": "off",
+      "comma-spacing": "off",
+      "default-param-last": "off",
+      "import/no-named-as-default": "off",
+      "import/no-named-as-default-member": "off",
+      "key-spacing": "off",
+      "max-len": "off",
+      "no-extra-semi": "off",
+      "no-labels": "off",
+      "no-multi-spaces": "off",
+      "no-underscore-dangle": "off",
+      "object-curly-newline": "off",
+      "object-property-newline": "off",
+      "quotes": "off"
+    }
   }
 }
