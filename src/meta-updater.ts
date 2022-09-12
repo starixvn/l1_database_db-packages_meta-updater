@@ -1,71 +1,43 @@
-/**
- * @typedef {Object} MetaUpdater
- */
+import { Collection, MongoClient } from 'mongodb';
+import Logger from '@ldb/logger';
+import { DBHelper, Utils } from '@ldb/db-common';
+import MetaConfig, { MetaConfigInput } from './models/meta-config';
+import { MetaAggregate } from './models/meta-aggregate';
+import Config from './config';
+import Source from './const/source';
+import MetaQueue from './models/meta-queue';
 
-// eslint-disable-next-line no-unused-vars
-import { Collection, MongoClient } from "mongodb";
-import { DBHelper, Logger, Utils } from "@ldb/db-common";
-import Config        from "./config";
-import { Source }    from "./const/source";
-import MetaAggregate from "./models/meta-aggregate";
-import MetaConfig    from "./models/meta-config";
-import MetaQueue     from "./models/meta-queue";
+export class MetaUpdater {
+  #mongo: MongoClient;
 
-export default class MetaUpdater {
-  /**
-   * @type {MongoClient}
-   * @internal
-   */
-  #mongo;
+  #configColl: Collection;
 
-  /**
-   * @type {Collection}
-   * @internal
-   */
-  #configColl;
+  #configStrs: string[] = [];
 
-  /**
-   * @type {string[]}
-   * @internal
-   */
-  #configStrs;
+  #timeouts: { [k: string]: NodeJS.Timeout } = {};
 
-  /**
-   * @type {Object}
-   * @internal
-   */
-  #timeouts = {};
-
-  get timeouts() {
-    return this.#timeouts;
-  };
-
-  /**
-   * @type {Object}
-   * @internal
-   */
-  #flags = {};
+  #flags: { [k: string]: boolean } = {};
 
   /**
    * @param {Collection} configColl
    */
-  constructor(configColl) {
+  constructor(configColl: Collection) {
     if (!(configColl instanceof Collection)) throw Error('$configColl is not a Mongo Collection');
 
     this.#mongo  = DBHelper.getMongoClient(configColl);
     this.#configColl = configColl;
 
-    const connStr = DBHelper.redactMongoConnectionString(this.#mongo.s.url);
+    const connStr = DBHelper.redactMongoConnectionString(this.#mongo);
     Logger.info(undefined, this.constructor.name, `Initialized on ${this.#configColl.namespace} @[${connStr}]`);
   };
 
   /**
    * @param {MetaConfig} config
    */
-  async #executeRunner(config) {
+  async #executeRunner(config: MetaConfig) {
     /** Timer */
     const start = Date.now();
-    const label = `Runner`;
+    const label = 'Runner';
 
     try {
       /** Target collection */
@@ -76,7 +48,7 @@ export default class MetaUpdater {
 
       /** Run agg */
       await target.aggregate(agg).toArray();
-    } catch (e) { Logger.catchError(e, `${label} - ${config.coll}`); };
+    } catch (e) { if (e instanceof Error) Logger.catchError(e, `${label} - ${config.coll}`); };
 
     Logger.debug(undefined, label, `${config.coll} - Execution take ${Date.now() - start}ms to complete`);
 
@@ -91,10 +63,10 @@ export default class MetaUpdater {
   /**
    * @param {MetaConfig} config
    */
-  async #executeQueuer(config) {
+  async #executeQueuer(config: MetaConfig) {
     /** Timer */
     const start = Date.now();
-    const label = `Queuer`;
+    const label = 'Queuer';
 
     // eslint-disable-next-line no-restricted-syntax
     processing: try {
@@ -103,8 +75,8 @@ export default class MetaUpdater {
       const filter = { 'target.db': config.db, 'target.coll': config.coll };
 
       /** Get _ids */
-      const _ids = await queue.find(filter, { projection: { _id: 1 } }).map(({ _id }) => _id).toArray();
-      if (_ids.length === 0) break processing;
+      const ids = await queue.find(filter, { projection: { _id: 1 } }).map(({ _id }) => _id).toArray();
+      if (ids.length === 0) break processing;
 
       /** Build agg */
       const agg = new MetaQueue(config);
@@ -113,9 +85,9 @@ export default class MetaUpdater {
       await queue.aggregate(agg).toArray();
 
       /** Delete _ids */
-      await queue.deleteMany({ _id: { $in: _ids }, ...filter });
-      Logger.debug(undefined, label, `${config.coll} - Updated ${_ids.length} ticket${_ids.length === 1 ? '' : 's'}`);
-    } catch (e) { Logger.catchError(e, `${label} - ${config.coll}`); };
+      await queue.deleteMany({ _id: { $in: ids }, ...filter });
+      Logger.debug(undefined, label, `${config.coll} - Updated ${ids.length} ticket${ids.length === 1 ? '' : 's'}`);
+    } catch (e) { if (e instanceof Error) Logger.catchError(e, `${label} - ${config.coll}`); };
 
     Logger.debug(undefined, label, `${config.coll} - Execution take ${Date.now() - start}ms to complete`);
 
@@ -130,15 +102,15 @@ export default class MetaUpdater {
   /**
    * @returns {Promise<MetaConfig[]>}
    */
-  async #getConfigs() {
-    return this.#configColl.find({}, { projection: { _id: 0 } }).map((doc) => new MetaConfig(doc)).toArray();
+  async #getConfigs(): Promise<MetaConfig[]> {
+    return this.#configColl.find({}, { projection: { _id: 0 } }).map((doc) => new MetaConfig(doc as unknown as MetaConfigInput)).toArray();
   };
 
   /**
    *
    */
   async run() {
-    const label = `Run`;
+    const label = 'Run';
 
     /** Turn on flag to run continuously */
     this.#flags.continue = true;
@@ -154,17 +126,17 @@ export default class MetaUpdater {
 
     /** Schedule next refresh */
     const nextSchedule = Utils.Schedule.getNextTimeout(Config.REFRESH_PERIOD);
-    this.#timeouts[`refresh-config`] = setTimeout(this.refresh.bind(this), nextSchedule);
+    this.#timeouts['refresh-config'] = setTimeout(this.refresh.bind(this), nextSchedule);
     Logger.trace(undefined, label, `refresh-config - setTimeout @${nextSchedule}`);
 
-    Logger.info(undefined, label, `Successfully started tasks`);
+    Logger.info(undefined, label, 'Successfully started tasks');
   };
 
   /**
    *
    */
   async stop() {
-    const label = `Stop`;
+    const label = 'Stop';
 
     /** Turn off flag to keep current tasks from setting up new run */
     this.#flags.continue = false;
@@ -176,7 +148,7 @@ export default class MetaUpdater {
     /** Clear tracking object */
     this.#timeouts = {};
 
-    Logger.info(undefined, label, `Successfully stopped tasks`);
+    Logger.info(undefined, label, 'Successfully stopped tasks');
   };
 
   /**
@@ -192,17 +164,19 @@ export default class MetaUpdater {
     if (this.#configStrs.join(joiner) !== configs.join(joiner)) {
       /** Stop all scheduled tasks */
       await this.stop();
-      Logger.debug(undefined, label, `Stopped scheduled tasks`);
+      Logger.debug(undefined, label, 'Stopped scheduled tasks');
 
       /** Run the tasks again */
       await this.run();
-      Logger.info(undefined, label, `Started tasks with new configs`);
+      Logger.info(undefined, label, 'Started tasks with new configs');
     } else {
       /** Because run() will init new schedule for restart,
        *  we need to manual set schedule for refresh if not execute run() */
       const nextSchedule = Utils.Schedule.getNextTimeout(Config.REFRESH_PERIOD);
-      this.#timeouts[`refresh-config`] = setTimeout(this.refresh.bind(this), nextSchedule);
+      this.#timeouts['refresh-config'] = setTimeout(this.refresh.bind(this), nextSchedule);
       Logger.trace(undefined, label, `refresh-config - setTimeout @${nextSchedule}`);
     }
   };
 };
+
+export default MetaUpdater;

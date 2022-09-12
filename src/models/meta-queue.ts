@@ -1,15 +1,7 @@
-// eslint-disable-next-line no-unused-vars
-import MetaConfig from "./meta-config";
+import MetaConfig from './meta-config';
 
-/**
- * @typedef   {Array}  MetaQueue
- */
 export class MetaQueue extends Array {
-  /**
-   *
-   * @param {MetaConfig} config
-   */
-  constructor(config) {
+  constructor(config: MetaConfig) {
     super();
 
     /** Get pending merge objects */
@@ -20,7 +12,7 @@ export class MetaQueue extends Array {
     /** Execute merge */
     this.push({ $merge: {
       into: { db: config.db, coll: config.coll },
-      on  : [ "_id" ],
+      on  : [ '_id' ],
     } });
   };
 };

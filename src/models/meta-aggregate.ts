@@ -1,25 +1,23 @@
-/**
- * @typedef   {Array}  MetaAggregate
- */
-
-import Source       from "../const/source";
-import SourceLookup from "../const/source-lookup";
-import Builder      from "../utils/builder";
-// eslint-disable-next-line no-unused-vars
-import MetaConfig   from "./meta-config";
+import { QUEUE, USERS } from '../const/source';
+import CollNamespace    from '../interfaces/coll-namespace';
+import Builder          from '../utils/builder';
+import MetaConfig       from './meta-config';
+import MetaField        from './meta-field';
+import SourceLookup     from '../const/source-lookup';
 
 export class MetaAggregate extends Array {
   /**
+   * 
    * @param {MetaConfig} config
    */
-  constructor(config) {
+  constructor(config: MetaConfig) {
     super();
 
     /** Filter out fields with invalid lookup source */
     const fields = config.fields.filter(({ lookup }) => lookup in SourceLookup);
 
     /** Get unique sources */
-    const sources = new Map(Array.from(new Set(fields.map(({ lookup }) => lookup))).map((source) => [source, SourceLookup[source]]));
+    const sources = new Map(Array.from(new Set(fields.map(({ lookup }) => lookup))).map((source: USERS) => [source, SourceLookup[source]]));
 
     /**  */
     this.push({ $match: { $and: [
@@ -44,23 +42,21 @@ export class MetaAggregate extends Array {
     /** Project only needed fields */
     this.push({ $project: Object.assign(
       { _id: 1 },
-      ...fields.map((field) => sources.get(field.lookup).toMergeProjection(field.field, field.sourceField, field.default)),
+      ...fields.map((field: MetaField) => sources.get(field.lookup)?.toMergeProjection(field.field, field.sourceField, field.default)).filter(Boolean),
     ) });
 
     this.push({ $project: {
       target: {
         db    : config.db,
         coll  : config.coll,
-      },
-      data  : `$$CURRENT`,
+      } as CollNamespace,
+      data  : '$$CURRENT',
     } });
 
     /** Execute merge */
     this.push({ $merge: {
-      into: Source.QUEUE,
-      on  : ["target.db", "target.coll", "data._id"],
+      into: QUEUE,
+      on  : ['target.db', 'target.coll', 'data._id'],
     } });
   };
 };
-
-export default MetaAggregate;
