@@ -1,2 +1,2 @@
-# meta-updater
+# @ldb/meta-updater
 

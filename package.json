@@ -1,10 +1,13 @@
 {
   "name": "@ldb/meta-updater",
-  "version": "0.0.8",
+  "version": "1.0.0",
   "description": "Add missing metadata to tickets",
-  "main": "src/index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "repl": "node --experimental-specifier-resolution=node --eval=\"process.chdir('./src');\" --interactive"
+    "repl": "node --experimental-specifier-resolution=node --interactive",
+    "build": "rm -rf lib && tsc -p src",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -15,11 +18,16 @@
     "email": "billy.bui@luminet.vn"
   },
   "license": "ISC",
-  "type": "module",
   "dependencies": {
-    "mongodb": "^4.8.1"
+    "@ldb/db-common": "1.0.1",
+    "@ldb/logger": "1.0.0",
+    "mongodb": "4.9.1"
   },
-  "publishConfig": {
-    "@ldb:registry": "https://git3.nexdev.net/api/v4/projects/684/packages/npm/"
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.36.2",
+    "@typescript-eslint/parser": "^5.36.2",
+    "eslint": "^8.23.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "typescript": "^4.8.3"
   }
 }
