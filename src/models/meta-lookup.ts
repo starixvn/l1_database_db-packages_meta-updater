@@ -62,8 +62,8 @@ export class MetaLookup implements MetaLookupInput {
   /**
   * @returns {Object}
   */
-  toFilter(): object | undefined {
-    return this.#filter;
+  toFilter(): object {
+    return this.#filter ?? {};
   };
 
   /**

@@ -46,6 +46,7 @@ export class MetaAggregate extends Array {
     ) });
 
     this.push({ $project: {
+      _id   : 0,
       target: {
         db    : config.db,
         coll  : config.coll,

@@ -1,11 +1,11 @@
 {
   "name": "@ldb/meta-updater",
-  "version": "1.0.1",
+  "version": "1.0.8",
   "description": "Add missing metadata",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "repl": "node --experimental-specifier-resolution=node --interactive",
+    "repl": "ts-node --experimental-specifier-resolution=node --interactive",
     "build": "rm -rf lib && tsc -p src",
     "prepare": "npm run build"
   },

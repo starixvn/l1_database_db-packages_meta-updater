@@ -43,11 +43,15 @@ export class MetaUpdater {
       /** Target collection */
       const target = this.#mongo.db(config.db).collection(config.coll);
 
+      /** Set simple collation to avoid conflicting in merge stage */
+      const collation = { locale: 'simple' };
+
       /** Build agg */
       const agg = new MetaAggregate(config);
+      Logger.trace(JSON.stringify(agg), label, config.coll);
 
       /** Run agg */
-      await target.aggregate(agg).toArray();
+      await target.aggregate(agg, { collation }).toArray();
     } catch (e) { if (e instanceof Error) Logger.catchError(e, `${label} - ${config.coll}`); };
 
     Logger.debug(undefined, label, `${config.coll} - Execution take ${Date.now() - start}ms to complete`);
@@ -74,6 +78,13 @@ export class MetaUpdater {
       const queue = this.#mongo.db(Source.QUEUE.db).collection(Source.QUEUE.coll);
       const filter = { 'target.db': config.db, 'target.coll': config.coll };
 
+      /** Get collation */
+      const checkCollection = (await this.#mongo.db(config.db).command({
+        listCollections: 1,
+        filter: { name: config.coll },
+      })).cursor.firstBatch[0];
+      const collation = checkCollection?.options?.collation ?? { locale: 'simple' };
+
       /** Get _ids */
       const ids = await queue.find(filter, { projection: { _id: 1 } }).map(({ _id }) => _id).toArray();
       if (ids.length === 0) break processing;
@@ -82,7 +93,7 @@ export class MetaUpdater {
       const agg = new MetaQueue(config);
 
       /** Run agg */
-      await queue.aggregate(agg).toArray();
+      await queue.aggregate(agg, { collation }).toArray();
 
       /** Delete _ids */
       await queue.deleteMany({ _id: { $in: ids }, ...filter });
