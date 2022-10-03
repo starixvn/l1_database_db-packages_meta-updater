@@ -1,7 +1,7 @@
 {
   "name": "@ldb/meta-updater",
-  "version": "1.0.0",
-  "description": "Add missing metadata to tickets",
+  "version": "1.0.1",
+  "description": "Add missing metadata",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {

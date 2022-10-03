@@ -1,12 +1,14 @@
+import MetaField from '../models/meta-field';
+
 /**
- * @param   {string[]}  sources
+ * @param   {MetaField[]}  sources
  * @returns {Object[]}
  */
-function buildTargetFilter(sources: string[]): object[] {
-  return sources.map((item) => ({
-    [`${item}`]           : null,
-    [`__archive.${item}`] : null,
-  }));
+function buildTargetFilter(sources: MetaField[]): object[] {
+  return sources.map((item) => Object.assign(
+    { [`${item.field}`]: null },
+    item.archive ? { [`__archive.${item.field}`] : null } : {},
+  ));
 };
 
 /**

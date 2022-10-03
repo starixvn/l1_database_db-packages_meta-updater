@@ -15,6 +15,7 @@ export enum USERS {
   MEMBERID  = 'users_memberId',
   PLAYERID  = 'users_playerId',
   WINNERID  = 'users_winnerId',
+  SELF      = 'users_self',
 };
 
 const Source = Object.freeze({ CONFIG, QUEUE, USERS });

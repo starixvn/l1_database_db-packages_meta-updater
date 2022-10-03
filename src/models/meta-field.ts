@@ -5,6 +5,7 @@ export interface MetaFieldInput {
   field       : string;
   sourceField : string;
   default    ?: number | string | object;
+  archive    ?: boolean;
 };
 
 export class MetaField implements MetaFieldInput {
@@ -16,6 +17,8 @@ export class MetaField implements MetaFieldInput {
 
   default    ?: number | string | object;
 
+  archive    ?: boolean;
+
   /**
    * @param {MetaFieldInput} source
    */
@@ -24,6 +27,7 @@ export class MetaField implements MetaFieldInput {
     this.field        = source.field;
     this.sourceField  = source.sourceField;
     this.default      = source.default;
+    this.archive      = source.archive ?? true;
   };
 
   /**
