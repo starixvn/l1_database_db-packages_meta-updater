@@ -33,6 +33,14 @@ export const SourceLookup = Object.freeze({
     filter      : { winnerId: { $gt: 0 } },
     project     : 1,
   } as MetaLookupInput),
+  [USERS.SELF]: new MetaLookup({
+    from        : 'users',
+    localField  : '_id',
+    foreignField: '_id',
+    as          : USERS.SELF,
+    filter      : { 'local.memberId': { $gt: 0 } },
+    project     : 1,
+  } as MetaLookupInput),
 });
 
 export default SourceLookup;

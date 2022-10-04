@@ -62,8 +62,8 @@ export class MetaLookup implements MetaLookupInput {
   /**
   * @returns {Object}
   */
-  toFilter(): object | undefined {
-    return this.#filter;
+  toFilter(): object {
+    return this.#filter ?? {};
   };
 
   /**
@@ -79,11 +79,13 @@ export class MetaLookup implements MetaLookupInput {
   * @param {string}         field
   * @param {string}         [source]
   * @param {string|object}  [defaultValue]
+  * @param {boolean}        [archive]
   * @returns {Object}
   */
-  toMergeProjection(field: string, source?: string, defaultValue?: number | string | object): object {
+  toMergeProjection(field: string, source?: string, defaultValue?: number | string | object, archive?: boolean): object {
+    const setField = archive ? `__archive.${field}` : field;
     return ({
-      [`__archive.${field}`]: { $cond: [
+      [setField]: { $cond: [
         { $eq: [{ $ifNull: [`$${field}`, null] }, null] },
         { $ifNull: [`$${this.as}.${source ?? field}`, defaultValue ?? null] },
         '$$REMOVE',

@@ -21,7 +21,7 @@ export class MetaAggregate extends Array {
 
     /**  */
     this.push({ $match: { $and: [
-      { $or: Builder.buildTargetFilter(fields.map(({ field }) => field)) },
+      { $or: Builder.buildTargetFilter(fields) },
       { $or: Array.from(sources.values()).map((item) => item.toFilter()) },
     ] } });
 
@@ -42,10 +42,11 @@ export class MetaAggregate extends Array {
     /** Project only needed fields */
     this.push({ $project: Object.assign(
       { _id: 1 },
-      ...fields.map((field: MetaField) => sources.get(field.lookup)?.toMergeProjection(field.field, field.sourceField, field.default)).filter(Boolean),
+      ...fields.map((field: MetaField) => sources.get(field.lookup)?.toMergeProjection(field.field, field.sourceField, field.default, field.archive)).filter(Boolean),
     ) });
 
     this.push({ $project: {
+      _id   : 0,
       target: {
         db    : config.db,
         coll  : config.coll,
